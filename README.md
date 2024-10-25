@@ -9,7 +9,7 @@ cd to/an/example/dir
 
 Installation options;
 
->> serial
+### serial
 
 module load gnu9/9.3.0
 module load intel_compilers/2022.2
@@ -17,14 +17,14 @@ module load intel_compilers/2022.2
 make clean
 make -f Makefile serial
 
->> gfortran
+### gfortran
 
 module load gnu9/9.3.0
 
 make clean
 make -f Makefile gfortran
 
->> parallel
+### parallel
 
 module load gnu9/9.3.0
 module load openmpi4/4.0.4
