@@ -1,44 +1,55 @@
-# FastMC-1.4.0
+# GCMC Code for Simulating Adsorption in Crystalline Frameworks
 
-# Running
+                ███████╗ █████╗ ███████╗████████╗███╗   ███╗ ██████╗
+                ██╔════╝██╔══██╗██╔════╝╚══██╔══╝████╗ ████║██╔════╝
+                █████╗  ███████║███████╗   ██║   ██╔████╔██║██║     
+                ██╔══╝  ██╔══██║╚════██║   ██║   ██║╚██╔╝██║██║     
+                ██║     ██║  ██║███████║   ██║   ██║ ╚═╝ ██║╚██████╗
+                ╚═╝     ╚═╝  ╚═╝╚══════╝   ╚═╝   ╚═╝     ╚═╝ ╚═════╝
 
-cd to/an/example/dir
+## Overview
+FastMC is a Grand Canonical Monte Carlo (GCMC) program designed for simulating gas adsorption, selectivity, and diffusion in periodic crystalline structures. This includes metal-organic frameworks (MOFs), covalent organic frameworks (COFs), zeolitic imidazolate frameworks (ZIFs), and zeolites. FastMC is built on the subroutines from DL POLY Classic 1.10 and is written in Fortran.
 
-./call/path/to/gcmc.x
+## Dependencies
+Before building FastMC, ensure that the following dependencies are installed on your machine:
+- **GNU Compiler** 9.3.0
+- **Intel Compilers** 2022.2
+- **OpenMPI** 4.0.4 (for parallel builds)
 
-# Build from source
+## Installation
+FastMC supports several build configurations, including serial, gfortran, and parallel modes.
 
-Installation options;
-
-## serial
-
-module load gnu9/9.3.0
-
-module load intel_compilers/2022.2
+### Serial Build
+```bash
+export PATH=/path/to/gnu9/bin:$PATH
+export PATH=/path/to/intel_compilers/bin:$PATH
 
 make clean
-
 make -f Makefile serial
+```
 
-## gfortran
-
-module load gnu9/9.3.0
+### Gfortran Build
+```bash
+export PATH=/path/to/gnu9/bin:$PATH
 
 make clean
-
 make -f Makefile gfortran
+```
 
-## parallel
-
-module load gnu9/9.3.0
-
-module load openmpi4/4.0.4
-
-module load intel_compilers/2022.2
+### Parallel Build
+```bash
+export PATH=/path/to/gnu9/bin:$PATH
+export PATH=/path/to/openmpi4/bin:$PATH
+export PATH=/path/to/intel_compilers/bin:$PATH
 
 make clean
-
 make -f Makefile parallel
+```
 
+## Running the Code
+```bash
+export PATH=/path/to/fastmc-1.4.0/bin:$PATH
+cd /path/to/simulation
 
-
+gcmc.x
+```
