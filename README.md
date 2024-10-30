@@ -1,11 +1,13 @@
 # GCMC Code for Simulating Adsorption in Crystalline Frameworks
 
-                ███████╗ █████╗ ███████╗████████╗███╗   ███╗ ██████╗
-                ██╔════╝██╔══██╗██╔════╝╚══██╔══╝████╗ ████║██╔════╝
-                █████╗  ███████║███████╗   ██║   ██╔████╔██║██║     
-                ██╔══╝  ██╔══██║╚════██║   ██║   ██║╚██╔╝██║██║     
-                ██║     ██║  ██║███████║   ██║   ██║ ╚═╝ ██║╚██████╗
-                ╚═╝     ╚═╝  ╚═╝╚══════╝   ╚═╝   ╚═╝     ╚═╝ ╚═════╝
+<center><pre>
+███████╗ █████╗ ███████╗████████╗███╗   ███╗ ██████╗
+██╔════╝██╔══██╗██╔════╝╚══██╔══╝████╗ ████║██╔════╝
+█████╗  ███████║███████╗   ██║   ██╔████╔██║██║     
+██╔══╝  ██╔══██║╚════██║   ██║   ██║╚██╔╝██║██║     
+██║     ██║  ██║███████║   ██║   ██║ ╚═╝ ██║╚██████╗
+╚═╝     ╚═╝  ╚═╝╚══════╝   ╚═╝   ╚═╝     ╚═╝ ╚═════╝
+</pre></center>
 
 ## Overview
 FastMC is a Grand Canonical Monte Carlo (GCMC) program designed for simulating gas adsorption, selectivity, and diffusion in periodic crystalline structures. This includes metal-organic frameworks (MOFs), covalent organic frameworks (COFs), zeolitic imidazolate frameworks (ZIFs), and zeolites. FastMC is built on the subroutines from DL POLY Classic 1.10 and is written in Fortran.
