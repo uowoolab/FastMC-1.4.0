@@ -446,8 +446,8 @@ c              open(400+i,file=outfile)
             open(501,file=outfile4)
           endif
         endif
-        outfile2=outdir // '/runningstats.out'
-        open(202,file=outfile2)
+c        outfile2=outdir // '/runningstats.out'
+c        open(202,file=outfile2)
 c        outfile3=outdir // '/energies.out'
 c        open(203,file=outfile3)
       endif
