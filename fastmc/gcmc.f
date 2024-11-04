@@ -336,10 +336,10 @@ c Now we normalise
         init=duni(idnode)
 
 c     initialize jobcontrol file
-        if(idnode.eq.0)then
-          open(205,file='jobcontrol.in')
-          close(205)
-        endif
+c        if(idnode.eq.0)then
+c          open(205,file='jobcontrol.in')
+c          close(205)
+c        endif
 
 
 c       initialize rotangle 
@@ -594,7 +594,9 @@ c     across all nodes
         if(mod(gcmccount,400).eq.0)then
 
 c         check jobcontrol
-          call jobcheck(idnode,jobsafe,ljob,production)
+          if(ljob)then
+            call jobcheck(idnode,jobsafe,ljob,production)
+          endif
 
           if(.not.jobsafe)then
             call gstate(jobsafe)
@@ -781,10 +783,10 @@ c Failover displace -- shouldn't reach here
         nmols=nummols(mol)
 
         if((nhis.ne.0).and.(mod(gcmccount,abs(nhis)).eq.0))then
-          write(202,'(a35,f20.15,a15,f15.10,a15,f15.10)')
-     &'displacement acceptance ratio: ',
-     &(dble(accept_disp(iguest))/dble(disp_count(iguest))),
-     &'delr: ',sum(delrdisp),'angle: ',rotangle
+c          write(202,'(a35,f20.15,a15,f15.10,a15,f15.10)')
+c     &'displacement acceptance ratio: ',
+c     &(dble(accept_disp(iguest))/dble(disp_count(iguest))),
+c     &'delr: ',sum(delrdisp),'angle: ',rotangle
           if(nhis.lt.0)call hisarchive(ntpguest,gcmccount)
           if((nhis.gt.0).and.(prodcount.gt.0))call hisarchive
      &      (ntpguest,gcmccount) 

@@ -725,7 +725,9 @@ c          set default writing numguests.out to 1000 steps
      &"(/,'single point energy calculation requested ')")
           lspe=.true.
         elseif (findstring('jobcontrol',directive,idum))then
-           ljob=.true.
+c           ljob=.true.
+c           Set ljob to false, debugging option
+           ljob=.false.
         elseif (findstring('cutoff',directive,idum))then
            rcut=dblstr(directive,lenrec,idum)
         elseif (findstring('delr',directive,idum))then
