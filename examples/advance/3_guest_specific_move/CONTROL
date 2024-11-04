@@ -1,0 +1,54 @@
+GCMC Run
+temperature  303.150000
+
+steps    100000
+equilibration    -100000
+
+max guest atoms      3000
+max framework atoms      15000
+
+cutoff          4.000000 angstrom
+delr            1.0 angstrom
+ewald precision  1d-6
+
+numguests 1000
+history 2500
+
+&guest 1
+  pressure (bar) 0.50
+
+  move insert 0.4
+  move delete 0.4
+  move displace 0.2
+
+  accept displace 0.15
+  accept translate 0.75
+  # Reminder: accept rotation is 
+  # not implemented in the guest-specific options
+
+  probability 2
+  1  1
+  2  2  3
+&end
+
+&guest 2
+  pressure (bar) 0.50
+
+  move ins 0.75000
+  move del 0.10000
+  move dis 0.15
+
+  accep dis 0.2
+  accep tra 0.7
+
+  probability 1
+  2  1  2
+&end
+
+accept rotation 0.1
+
+grid factors 1 1 1
+
+grid spacing 0.150000
+
+finish

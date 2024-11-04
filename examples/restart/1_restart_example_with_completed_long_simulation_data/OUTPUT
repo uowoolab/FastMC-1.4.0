@@ -1,0 +1,165 @@
+
+                    FastMC version 1.4.0
+
+
+Started :          22   July      2024   13:07 -0400 GMT
+
+Running on    1 nodes
+
+
+energy units = kcal
+
+number of molecular types:      2
+
+  molecular species type:      1
+  name of species:   co2: carbon dioxide for adsorption in ze
+  number of molecules:      0
+  number of atoms:      3
+  atomic characteristics:
+                      site     name          mass        charge    repeat    freeze
+                         1     Cx          12.01070     0.65120         1         0
+                         2     Ox          15.99940    -0.32560         1         0
+                         3     Ox          15.99940    -0.32560         1         0
+
+  initial guest pos:
+                     site:  Cx           0.000000    0.000000    0.000000
+                     site:  Ox           1.149000    0.000000    0.000000
+                     site:  Ox          -1.149000    0.000000    0.000000
+
+  molecular species type:      2
+  name of species:   framework                               
+  number of molecules:     36
+  number of atoms:     44
+  atomic characteristics:
+                      site     name          mass        charge    repeat    freeze
+                         1     Zn          65.38000     0.68714         1         1
+                         2     Zn          65.38000     0.68715         1         1
+                         3     Zn          65.38000     0.68715         1         1
+                         4     Zn          65.38000     0.68714         1         1
+                         5     N           14.00670    -0.27848         1         1
+                         6     N           14.00670    -0.27851         1         1
+                         7     N           14.00670    -0.27851         1         1
+                         8     N           14.00670    -0.27847         1         1
+                         9     N           14.00670    -0.10487         1         1
+                        10     N           14.00670    -0.10483         1         1
+                        11     N           14.00670    -0.10483         1         1
+                        12     N           14.00670    -0.10487         1         1
+                        13     N           14.00670    -0.33557         1         1
+                        14     N           14.00670    -0.33557         1         1
+                        15     N           14.00670    -0.33558         1         1
+                        16     N           14.00670    -0.33556         1         1
+                        17     O           15.99940    -0.55677         1         1
+                        18     O           15.99940    -0.55675         1         1
+                        19     O           15.99940    -0.55675         1         1
+                        20     O           15.99940    -0.55677         1         1
+                        21     O           15.99940    -0.51882         1         1
+                        22     O           15.99940    -0.51881         1         1
+                        23     O           15.99940    -0.51882         1         1
+                        24     O           15.99940    -0.51882         1         1
+                        25     C           12.01070     0.19037         1         1
+                        26     C           12.01070     0.19040         1         1
+                        27     C           12.01070     0.19040         1         1
+                        28     C           12.01070     0.19037         1         1
+                        29     H            1.00794     0.09334         1         1
+                        30     H            1.00794     0.09333         1         1
+                        31     H            1.00794     0.09333         1         1
+                        32     H            1.00794     0.09334         1         1
+                        33     C           12.01070     0.16283         1         1
+                        34     C           12.01070     0.16281         1         1
+                        35     C           12.01070     0.16282         1         1
+                        36     C           12.01070     0.16282         1         1
+                        37     H            1.00794     0.11265         1         1
+                        38     H            1.00794     0.11266         1         1
+                        39     H            1.00794     0.11266         1         1
+                        40     H            1.00794     0.11265         1         1
+                        41     C           12.01070     0.54816         1         1
+                        42     C           12.01070     0.54813         1         1
+                        43     C           12.01070     0.54814         1         1
+                        44     C           12.01070     0.54817         1         1
+
+simulation cell vectors:
+                        35.655200    0.000000    0.000000
+                         0.000000   29.080500    0.000000
+                       -12.425127    0.000000   25.594223
+
+system volume:
+                          26537.9085585    
+
+ Probability grid size:     240     195     192
+
+Guest    1 pressure:         0.9948 bar
+
+ignoring unknown general move
+
+writing to numguests.out every   1000 gcmc steps.
+
+*** warning the averaging window was not specified in the CONTROL file, defaulting to     100000 steps per window.
+
+Move frequencies specified
+Normalised move frequencies:
+            guest:   1
+        insertion:  0.333         deletion:  0.333     displacement:  0.333
+          jumping:  0.000          flexing:  0.000         swapping:  0.000
+      translation:  0.000         rotation:  0.000      multi jumps:  0.000
+Target acceptance ratios:
+     displacement:  0.500      translation:  0.500         rotation:  0.500
+
+
+i,j,k,l values for duni()  103  112   53  153
+
+             Initial guest energy :              0.000000
+             van der Waals energy :              0.000000
+             Electrostatic energy :              0.000000
+        Energy reported by DL_POLY:         -11190.606165
+
+time elapsed since job start =           1.121 seconds
+
+Completed at least    1500000 equilibration cycles for each guest
+Starting production at 126407200 over all nodes
+
+***************************************************************************
+   Data reported from node   0
+***************************************************************************
+
+     guest  1: co2: carbon dioxide for adsorption in ze
+
+                                                            <N>:         91.811777992
+                                                            <E>:       -756.809149592
+                                                          <E*N>:     -69669.494245516
+                                                          <N*N>:       8449.961248488
+                                                          <E*E>:     574495.827703705
+                                                     Multiplier:            100000001
+                        Isosteric heat of adsorption (kcal/mol):          9.625408877
+                                           Isosteric heat error:          0.058306353
+                                 Heat capacity, Cv (kcal/mol/K):          0.006676699
+                                            Heat capacity error:          0.000088536
+
+
+time elapsed for 226407200  gcmc steps :     42162.117 seconds
+
+       total accepted steps :  37834709
+
+       insertion ratio:     0.000690166
+
+        deletion ratio:     0.000688845
+
+    displacement ratio:     0.500000000
+
+final stats for guest  1   co2: carbon dioxide for adsorption in ze
+
+
+                               <N>:       91.811778 +/-        4.230
+                               <E>:     -756.809150 +/-       38.860
+                             <E*N>:   -69669.494246 +/-     6800.185
+                             <N*N>:     8449.961248 +/-      780.439
+                             <E*E>:   574495.827704 +/-    59179.216
+
+
+                                  average number of guests:       91.811778
+                                            standard error:        4.229880
+                   Isosteric heat of adsorption (kcal/mol):        9.625409
+                                      Isosteric heat error:        0.058306
+                            Heat capacity, Cv (kcal/mol/K):        0.006677
+                                       Heat capacity error:        0.000089
+                                       Total steps counted:       100000001
+

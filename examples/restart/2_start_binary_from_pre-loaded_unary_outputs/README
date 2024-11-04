@@ -1,0 +1,16 @@
+Example: Starting a Binary Simulation from a Unary Configuration
+
+This example demonstrates how to use a unary simulation as the starting point for a binary simulation. We have provided output files from a completed simulation of CO2 absorbed in CALF-20, using a 4 x 3 x 3 supercell.
+
+Instructions:
+
+1. Copy the Configuration:
+   From the pre-loaded_configuration directory, copy the REVCON file into the binary_from_pre-loaded_configuration directory and rename it to CONFIG.
+
+2. Update the FIELD File:
+   Follow the restart steps to ensure the correct number of guest molecules in the CONFIG file matches the NUMMOL value in the FIELD file.
+
+3. Set Up the CONTROL File:
+   Unlike a restart, you do not need to include restart in the CONTROL file. Instead, configure the parameters as you would for a new binary simulation.
+
+Note: The REVIVE file is not required, as you are not restarting a simulation but rather starting a new one from an existing CONFIG file.
