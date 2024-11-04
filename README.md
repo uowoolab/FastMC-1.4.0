@@ -1,13 +1,8 @@
-# GCMC Code for Simulating Adsorption in Crystalline Frameworks
+<p align="center">
+    <img src="image/FastMC.png" alt="FastMC plot">
+</p>
 
-<center><pre>
-███████╗ █████╗ ███████╗████████╗███╗   ███╗ ██████╗
-██╔════╝██╔══██╗██╔════╝╚══██╔══╝████╗ ████║██╔════╝
-█████╗  ███████║███████╗   ██║   ██╔████╔██║██║     
-██╔══╝  ██╔══██║╚════██║   ██║   ██║╚██╔╝██║██║     
-██║     ██║  ██║███████║   ██║   ██║ ╚═╝ ██║╚██████╗
-╚═╝     ╚═╝  ╚═╝╚══════╝   ╚═╝   ╚═╝     ╚═╝ ╚═════╝
-</pre></center>
+# GCMC Code for Simulating Adsorption in Crystalline Frameworks
 
 ## Overview
 FastMC is a Grand Canonical Monte Carlo (GCMC) program designed for simulating gas adsorption, selectivity, and diffusion in periodic crystalline structures. This includes metal-organic frameworks (MOFs), covalent organic frameworks (COFs), zeolitic imidazolate frameworks (ZIFs), and zeolites. FastMC is built on the subroutines from DL POLY Classic 1.10 and is written in Fortran.
