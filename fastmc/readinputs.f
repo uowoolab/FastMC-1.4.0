@@ -516,7 +516,7 @@ c     halt program if potential cutoff exceeds cell width
      &ljob,mcsteps,eqsteps,celprp,ntpguest,lrestart,laccsample,lnumg,
      &nnumg,nhis,nwind,mcinsf, mcdelf, mcdisf, mcjmpf, mcflxf, mcswpf, 
      &mctraf, mcrotf, mcmjpf, disp_ratio, tran_ratio, rota_ratio, lfuga,
-     &maxguest,maxatm,desorb)
+     &maxguest,maxatm,desorb,lnorm_bin)
 c*************************************************************************
 c
 c     Subroutine to read the CONTROL file
@@ -531,6 +531,7 @@ c*************************************************************************
       logical lmcsteps,leqsteps,lprob,loop3,rprob,lrestart,laccsample
       logical mvspefid(ntpguest), delrspefid(ntpguest),lmaxg,lmaxf
       logical disp_ratiospefid(ntpguest), tran_ratiospefid(ntpguest)
+      logical lnorm_bin
       real(8) drdf,dzdn,zlen,temp,rcut
       integer idnode,idum,keyres,eqsteps,mcsteps,idguest,nhis,nnumg
       integer n,iprob,i,j,ntpsite,ntpguest,ngst,cprob,nwind,maxguest
@@ -560,6 +561,7 @@ c*************************************************************************
       loop=.true.
       loop2=.false.
       lewald=.false.
+      lnorm_bin = .false.
 c     allocate guest pressures
 c     allocate guest mole fractions
       do i=1,ntpguest
@@ -601,7 +603,14 @@ c     allocate guest pressures
         if(record(1).eq.'#'.or.record(1).eq.' ')then
 c       record is commented out
 
-        else if(findstring('restart',directive,idum))then
+      elseif(findstring('normal_binning', directive, idum))then
+        lnorm_bin = .true.
+        if(idnode .eq. 0)then
+          write(nrite,"(/,a)") 'Normal binned probability plots
+     & will be generated alongside the equitably binned plots.
+     & Look for the file named *_norm_bin.cube.'
+        endif
+        elseif(findstring('restart',directive,idum))then
            keyres=1
            if(idnode.eq.0)write(nrite,'(/,3x,a)')
      &'***restart requested***'

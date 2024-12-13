@@ -37,6 +37,7 @@ c************************************************************
       logical lgchk,lspe,ljob,lprob,fram,newmol
       logical lfuga,file_exists
       logical insert,delete,displace,lrestart,laccsample
+      logical lnorm_bin
       logical jump, flex, swap
       logical tran, rota, multijump
       logical accepted,production,jobsafe,lnumg
@@ -269,7 +270,7 @@ c       this is in case we run into allocation problems later on
      &celprp,ntpguest,lrestart,laccsample,lnumg,nnumg,nhis,nwind,
      &mcinsf, mcdelf, mcdisf, mcjmpf, mcflxf, mcswpf, mctraf, mcrotf,
      &mcmjpf,disp_ratio,tran_ratio,rota_ratio,lfuga,maxguest,maxatm,
-     &desorb)
+     &desorb,lnorm_bin)
 
 c Normalise the move frequencies (individually)
       if (desorb.eq.1)then
@@ -1927,7 +1928,8 @@ c           compute C_v and Q_st for the windowed averages
             rollcount = 0
         endif
           if(lprob)then
-            call storeprob(ntpguest,rcell,ngrida,ngridb,ngridc)
+            call storeprob(ntpguest,rcell,ngrida,ngridb,ngridc,
+     &lnorm_bin)
           endif
         endif
 
@@ -2218,6 +2220,9 @@ c     write final probability cube files
             iprob=iprob+1
             call gdsum3(grid,cprob,ntprob,gridsize,gridbuff)
             if(idnode.eq.0)call writeprob
+     &(i,cprob,iprob,cell,ntpguest,ntpfram,gridsize,
+     &ngrida,ngridb,ngridc,prodcount)
+            if(lnorm_bin.and.idnode.eq.0)call writeprobnormalbin
      &(i,cprob,iprob,cell,ntpguest,ntpfram,gridsize,
      &ngrida,ngridb,ngridc,prodcount)
           enddo

@@ -1,5 +1,6 @@
       module utility_pack
       use parse_module
+
       implicit none
 
       integer nsite
@@ -38,6 +39,7 @@
       integer, allocatable :: accept_tran(:)
       integer, allocatable :: tran_count(:)
       real(8), allocatable :: grid(:,:)
+      real(8), allocatable :: grid_norm(:,:)
       real(8), allocatable :: dbuff(:),delE(:)
       real(8), allocatable :: statbuff(:),chainstats(:)
       real(8), allocatable :: gasmol(:), gaseng(:)
@@ -166,6 +168,7 @@ c     statistics file input channel
       save numtyp,numfrz,dens,ind,newx,newy,newz,despre,packf
       save ckcsum,ckssum,ckcsnew,ckssnew,ckcsorig,ckssorig
       save nprob,nprobsites,lprobsites,grid,selsum,seltot,selwin2
+      save grid_norm
       save accept_disp, disp_count, accept_tran, tran_count,adspres
       save delrdisp, delr, disp_ratio, tran_ratio, tran_delr,adsguen
       save delE,energy,total_pressure,gstfuga,gstmolfract,selvar
@@ -464,7 +467,7 @@ c      subroutine to allocate probability arrays
 c
 c*********************************************************************
       implicit none
-      integer, parameter :: np=4
+      integer, parameter :: np=5
       integer ntpguest,ntprob,ntpsite,gridsize
       integer i,j, idnode
       integer, dimension(np) :: fail 
@@ -476,6 +479,7 @@ c*********************************************************************
       allocate(nprobsites(ntprob),stat=fail(2))
       allocate(lprobsites(ntprob,ntpsite),stat=fail(3))
       allocate(grid(ntprob,gridsize),stat=fail(4))
+      allocate(grid_norm(ntprob,gridsize),stat=fail(5))
 
       do i=1,np
         if(fail(i).gt.0)then
@@ -487,6 +491,7 @@ c*********************************************************************
         nprobsites(i)=0
         do j=1,gridsize
           grid(i,j)=0
+          grid_norm(i,j)=0
         enddo
       enddo
 
@@ -494,13 +499,14 @@ c*********************************************************************
       end subroutine alloc_prob_arrays
 
       subroutine storeprob
-     &(ntpguest,rcell,ngrida,ngridb,ngridc)
+     &(ntpguest,rcell,ngrida,ngridb,ngridc,lnorm_bin)
 c*********************************************************************
 c
 c      subroutine to store guest positions in a grid
 c
 c*********************************************************************
       implicit none
+      logical lnorm_bin
       integer mol,np,iprob,iguest,i,maxprob,itprob
       integer jj,itmols,nmols,natms,itatm,jatm,val
       integer ngrida,ngridb,ngridc,ntpguest
@@ -539,19 +545,35 @@ c         convert guest atoms to fractional coordinates
           call frac(newx,newy,newz,natms,rcell)
 
 c       iterate over number of probability plots
-        
-          do iprob=1,np
 
-            do i=1,nprobsites(itprob+iprob)
-              if(lprobsites(itprob+iprob,i).eq.0)then  
-                call equitable_bin(comx,comy,comz,ngrida,ngridb,ngridc,
-     &itprob+iprob)
-              else
-                jatm=lprobsites(itprob+iprob,i)
-                call equitable_bin(newx(jatm),newy(jatm),newz(jatm),
+          do iprob=1,np
+            if(.not.lnorm_bin)then
+              do i=1,nprobsites(itprob+iprob)
+                if(lprobsites(itprob+iprob,i).eq.0)then
+                  call equitable_bin(comx,comy,comz,ngrida,ngridb,
+     &ngridc,itprob+iprob)
+                else
+                  jatm=lprobsites(itprob+iprob,i)
+                  call equitable_bin(newx(jatm),newy(jatm),newz(jatm),
      &ngrida,ngridb,ngridc,itprob+iprob)
-              endif
-            enddo
+                endif
+              enddo
+            else
+              do i=1,nprobsites(itprob+iprob)
+                if(lprobsites(itprob+iprob,i).eq.0)then
+                  call equitable_bin(comx,comy,comz,ngrida,ngridb,
+     &ngridc,itprob+iprob)
+                  call normal_bin(comx,comy,comz,ngrida,ngridb,
+     &ngridc,itprob+iprob)
+                else
+                  jatm=lprobsites(itprob+iprob,i)
+                  call equitable_bin(newx(jatm),newy(jatm),newz(jatm),
+     &ngrida,ngridb,ngridc,itprob+iprob)
+                  call normal_bin(newx(jatm),newy(jatm),newz(jatm),
+     &ngrida,ngridb,ngridc,itprob+iprob)
+                endif
+              enddo
+            endif
           enddo
         enddo
         itprob=itprob+np
@@ -646,6 +668,93 @@ c       conditions for writing to a new line
 
       return
       end subroutine writeprob
+
+      subroutine writeprobnormalbin
+     &(iguest,itprob,iprob,cell,ntpguest,ntpfram,gridsize,
+     &ngrida,ngridb,ngridc,steps)
+c*********************************************************************
+c
+c     write gaussian .cube files for visualization
+c
+c*********************************************************************
+      implicit none
+      character*34 filenamenormbin
+      real(8) vol
+      integer itprob,ntpguest,iguest,i,j,ii
+      integer igrid,k,l,ngrida,ngridb,ngridc,ntpfram
+      integer nfram,framol,nmol,natms,iatm,m,n,o,p
+      integer gridsize,steps,iprob,ip
+      real(8), dimension(9) :: cell
+
+      vol=(cell(2)*cell(6)-cell(3)*cell(5))/(ngrida*ngridb)*
+     &cell(7)/ngridc+
+     &(cell(3)*cell(4)-cell(1)*cell(6))/(ngrida*ngridb)*
+     &cell(8)/ngridc+
+     &(cell(1)*cell(5)-cell(2)*cell(4))/(ngrida*ngridb)*
+     &cell(9)/ngridc
+c     get number of framework atoms
+      nfram=0
+      do i=1,ntpfram
+        framol=locfram(i)
+        nfram=nfram+nummols(framol)*numatoms(framol)
+      enddo
+
+      write(filenamenormbin,"('prob_guest',i2.2,'_prob_',i2.2,
+     &'_norm_bin.cube')")
+     &iguest,iprob
+      open(i,file=filenamenormbin)
+
+c     write header stuff for cube
+      write(i,"('probability cube file',/,'outer loop a, middle loop
+     & b, inner loop c')")
+      write(i,'(i6, 3f12.6)')nfram,0.d0,0.d0,0.d0
+      write(i,'(i6,3f12.6)')ngrida,cell(1)/ngrida,cell(2)/ngrida,
+     &cell(3)/ngrida
+      write(i,'(i6,3f12.6)')ngridb,cell(4)/ngridb,cell(5)/ngridb,
+     &cell(6)/ngridb
+      write(i,'(i6,3f12.6)')ngridc,cell(7)/ngridc,cell(8)/ngridc,
+     &cell(9)/ngridc
+c     write cartesians of framework
+      do m=1,ntpfram
+        framol=locfram(m)
+        nmol=nummols(framol)
+        natms=numatoms(framol)
+        iatm=0
+        do n=1,nmol
+          do o=1,natms
+            iatm=iatm+1
+            write(i,'(i6,4f12.6)')atmnumber(atmwght(framol,o)),0.d0,
+     &               framwkxxx(framol,iatm)*angs2bohr,
+     &               framwkyyy(framol,iatm)*angs2bohr,
+     &               framwkzzz(framol,iatm)*angs2bohr
+
+          enddo
+        enddo
+      enddo
+      igrid=0
+
+c     inner loop is c vec, middle loop is b vec, outter loop is a vec.
+c     this has been intrinsically stored in the array grid.
+c     the cube file writes six entries per line *except* when it reaches
+c     the end of the number of grid points in the c direction (fastest
+c     loop).  In this case it will end the line before reaching the
+c     sixth entry.  A nuisance.
+      ip=0
+      do j=1,gridsize
+        ip=ip+1 
+        write(i,'(e15.6)',advance='no')
+     &(dble(grid_norm(itprob,j))/vol/dble(steps))
+
+c       conditions for writing to a new line 
+        if((mod(j,ngridc).eq.0).or.(ip.eq.6))then
+          write(i,'(x)')
+          ip=0
+        endif
+      enddo
+      close(i)
+
+      return
+      end subroutine writeprobnormalbin
 
       subroutine frac(x,y,z,natms,rcell)
 c*********************************************************************
@@ -1877,6 +1986,42 @@ c       conditions in the CONFIG and FIELD file.
 
       end subroutine revread
       
+      subroutine normal_bin(fposa,fposb,fposc,ngrida,ngridb,ngridc,
+     &subgrid)
+c***********************************************************************
+c
+c     Update the global grid(subgrid, ...) with the configuration
+c     Assigns the entire configuration to a single grid cell
+c     
+c***********************************************************************
+      implicit none
+
+      integer ngrida,ngridb,ngridc,subgrid
+      real(8) fposa,fposb,fposc
+c     local variables
+      integer bin,aidx,bidx,cidx
+
+c     Calculate the grid indices directly from the fractional positions
+      aidx=int(fposa*ngrida)+1
+      bidx=int(fposb*ngridb)+1
+      cidx=int(fposc*ngridc)+1
+
+c     Ensure indices stay within the grid bounds (periodic wrapping)
+      if(aidx>ngrida)aidx=aidx-ngrida
+      if(bidx>ngridb)bidx=bidx-ngridb
+      if(cidx>ngridc)cidx=cidx-ngridc
+      if(aidx<1)aidx=aidx+ngrida
+      if(bidx<1)bidx=bidx+ngridb
+      if(cidx<1)cidx=cidx+ngridc
+
+c     Convert 3D indices to the 1D bin index
+      bin=(aidx-1)*ngridb*ngridc+(bidx-1)*ngridc+cidx
+
+c     Update the probability grid
+      grid_norm(subgrid,bin)=grid(subgrid,bin)+1.0
+
+      end subroutine normal_bin
+
       subroutine equitable_bin(fposa,fposb,fposc,ngrida,ngridb,ngridc,
      &subgrid)
 c***********************************************************************
