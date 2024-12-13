@@ -2207,7 +2207,17 @@ c     sum over all parallel nodes
       call gisum(gcmccount,1,buffer)
 
 c     write final probability cube files
-      
+
+c     Write header for Tanimoto section to OUTPUT file
+      if(idnode.eq.0.and.lprob.and.prodcount.gt.0)then
+        write(nrite, '(A)') 'Tanimoto Statistical Convergence Crit
+     &eria for Probability Plots'
+        write(nrite, '(/,A)') '       File Name                        
+     &Mean       Std Dev'
+        write(nrite, '(A)') '       -------------------------------
+     &-----------------------'
+      endif
+
       cprob=0
       cell=cell*angs2bohr
       if(lprob.and.prodcount.gt.0)then
@@ -2217,9 +2227,14 @@ c     write final probability cube files
             cprob=cprob+1
             iprob=iprob+1
             call gdsum3(grid,cprob,ntprob,gridsize,gridbuff)
-            if(idnode.eq.0)call writeprob
+            if (idnode.eq.0) then
+              call writeprob
      &(i,cprob,iprob,cell,ntpguest,ntpfram,gridsize,
      &ngrida,ngridb,ngridc,prodcount)
+              call writetanimoto
+     &(i,cprob,iprob,gridsize,idnode,
+     &ngrida,ngridb,ngridc,gridfactor)
+            endif          
           enddo
         enddo
       endif
