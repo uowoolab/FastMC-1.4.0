@@ -2209,7 +2209,8 @@ c     sum over all parallel nodes
 c     write final probability cube files
 
 c     Write header for Tanimoto section to OUTPUT file
-      if(idnode.eq.0.and.lprob.and.prodcount.gt.0)then
+      if(idnode.eq.0.and.lprob.and.prodcount.gt.0
+     &.and..not.all(gridfactor==1))then
         write(nrite, '(A)') 'Tanimoto Statistical Convergence Crit
      &eria for Probability Plots'
         write(nrite, '(/,A)') '       File Name                        
@@ -2231,9 +2232,11 @@ c     Write header for Tanimoto section to OUTPUT file
               call writeprob
      &(i,cprob,iprob,cell,ntpguest,ntpfram,gridsize,
      &ngrida,ngridb,ngridc,prodcount)
-              call writetanimoto
+              if(.not.all(gridfactor==1))then
+                call writetanimoto
      &(i,cprob,iprob,gridsize,idnode,
      &ngrida,ngridb,ngridc,gridfactor)
+              endif
             endif          
           enddo
         enddo
