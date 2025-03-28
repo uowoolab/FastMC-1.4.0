@@ -514,9 +514,9 @@ c     halt program if potential cutoff exceeds cell width
 
       subroutine readcontrol(idnode,lspe,temp,
      &ljob,mcsteps,eqsteps,celprp,ntpguest,lrestart,laccsample,lnumg,
-     &nnumg,nhis,nwind,mcinsf, mcdelf, mcdisf, mcjmpf, mcflxf, mcswpf, 
-     &mctraf, mcrotf, mcmjpf, disp_ratio, tran_ratio, rota_ratio, lfuga,
-     &maxguest,maxatm,desorb)
+     &nnumg,nhis,nwind,mcinsf, mcdelf,mcdisf,mcjmpf,mcflxf,mcswpf, 
+     &mctraf, mcrotf, mcmjpf, disp_ratio,tran_ratio,rota_ratio,lfuga,
+     &maxguest,maxatm,desorb,tgttani,tilconv)
 c*************************************************************************
 c
 c     Subroutine to read the CONTROL file
@@ -529,14 +529,15 @@ c*************************************************************************
 
       logical safe,loop,loop2,ltemp,lewald,lspe,ljob,lnumg,lfuga,lwind
       logical lmcsteps,leqsteps,lprob,loop3,rprob,lrestart,laccsample
-      logical mvspefid(ntpguest), delrspefid(ntpguest),lmaxg,lmaxf
-      logical disp_ratiospefid(ntpguest), tran_ratiospefid(ntpguest)
-      real(8) drdf,dzdn,zlen,temp,rcut
+      logical mvspefid(ntpguest),delrspefid(ntpguest),lmaxg,lmaxf
+      logical tilconv
+      logical disp_ratiospefid(ntpguest),tran_ratiospefid(ntpguest)
+      real(8) drdf,dzdn,zlen,temp,rcut,tgttani
       integer idnode,idum,keyres,eqsteps,mcsteps,idguest,nhis,nnumg
       integer n,iprob,i,j,ntpsite,ntpguest,ngst,cprob,nwind,maxguest
       integer maxatm,desorb
       real(8) disp_ratio(ntpguest), tran_ratio(ntpguest), rota_ratio
-      real(8), dimension(10) ::  celprp
+      real(8), dimension(10) :: celprp
       real(8) mcinsf(ntpguest), mcdelf(ntpguest), mcdisf(ntpguest)
       real(8) mcswpf(ntpguest), mcflxf(ntpguest), mcjmpf(ntpguest)
       real(8) mctraf(ntpguest), mcrotf(ntpguest), delr(ntpguest)
@@ -760,6 +761,9 @@ c           Set ljob to false, debugging option
            packf = dblstr(directive,lenrec,idum)
         elseif (findstring('finishment',directive,idum))then
            despre = dblstr(directive,lenrec,idum)
+        elseif (findstring('targettani',directive,idum))then
+           tgttani=dblstr(directive,lenrec,idum)
+           tilconv=.true.
         ! For all guests not specified
         elseif (findstring('move',directive,idum))then
           if (findstring('ins',directive,idum))then

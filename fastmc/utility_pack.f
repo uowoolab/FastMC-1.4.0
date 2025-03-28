@@ -629,6 +629,14 @@ c     the cube file writes six entries per line *except* when it reaches
 c     the end of the number of grid points in the c direction (fastest
 c     loop).  In this case it will end the line before reaching the
 c     sixth entry.  A nuisance.
+
+c      print *,"Before calling writetanimoto: grid(itprob, :) ="
+c      do j=1,gridsize
+c        if (grid(itprob,j)/=0.0) then
+c            print *, "j =",j, "grid(itprob,j) =", grid(itprob,j)
+c        endif
+c      end do
+
       ip=0
       do j=1,gridsize
         ip=ip+1 
@@ -643,9 +651,198 @@ c       conditions for writing to a new line
       enddo
       close(i)
   
-
       return
       end subroutine writeprob
+
+      subroutine writetanimoto
+     &(iguest,itprob,iprob,gridsize,idnode,
+     &ngrida,ngridb,ngridc,gridfactor)
+c*********************************************************************
+c
+c     write Tanimoto values to the OUTPUT file
+c
+c*********************************************************************
+      implicit none
+
+      integer iguest,itprob,iprob,gridsize,idnode
+      integer ngrida,ngridb,ngridc
+      integer, dimension(3) :: gridfactor
+      character*25 filename 
+
+c     Local variable
+      real(8) tanimoto_mean,tanimoto_std
+
+      write(filename,"('prob_guest',i2.2,'_prob_',i2.2,'.cube')")
+     &iguest,iprob
+
+      call calculate_tanimoto(itprob,gridsize,
+     &ngrida,ngridb,ngridc,gridfactor,tanimoto_mean,tanimoto_std)
+
+c     Write results to OUTPUT file
+      if(idnode.eq.0)then
+        write(nrite,'(7x,A25,5x,F8.3,5x,F8.5)')
+     &trim(filename),tanimoto_mean,tanimoto_std
+      endif
+
+      end subroutine writetanimoto
+      
+      subroutine get_min_tanimoto(ntpguest,gridsize,
+     &ngrida,ngridb,ngridc,gridfactor,mintani)
+c*********************************************************************
+c
+c     get lowest Tanimoto score between guest sites in simulation
+c
+c*********************************************************************
+      implicit none
+      integer gridsize,itprob,ntpguest,iguest
+
+c     Input variables
+      integer ngrida,ngridb,ngridc
+      integer, dimension(3) :: gridfactor
+
+c     Output variable
+      real(8) mintani
+      real(8) tanimoto_mean,tanimoto_std
+
+c     Initialize min_tanimoto to a large value
+      mintani = 1.0d0 
+
+      do iguest = 1, ntpguest
+        do itprob = 1, nprob(iguest)
+
+          call calculate_tanimoto(itprob,gridsize,
+     &ngrida,ngridb,ngridc,gridfactor,tanimoto_mean,tanimoto_std)
+
+c         Debuging - Print calculated values  
+c         print *, 'get_min_tanimoto...'
+c         print *, 'Tanimoto Mean:', tanimoto_mean
+c         print *, 'Tanimoto Std:', tanimoto_std
+
+c         Update min_tanimoto if the new value is smaller
+          if(tanimoto_mean.lt.mintani)then
+            mintani = tanimoto_mean
+          endif
+
+        enddo
+      enddo
+
+      end subroutine get_min_tanimoto
+
+
+      subroutine calculate_tanimoto(itprob,gridsize,
+     &ngrida,ngridb,ngridc,gridfactor,tanimoto_mean,tanimoto_std)
+c*********************************************************************
+c
+c     map 1D volumetric grid to 3D localdata
+c     group each replication of the unit cell into distinct blocks
+c     based on the folding factor defined by gridfactor
+c     normalize each block in localdata for fair comparison
+c     
+c     compute Tanimoto coefficients by comparing all pairs of blocks
+c     write Tanimoto results to OUTPUT file
+c
+c*********************************************************************
+      implicit none
+
+      integer gridsize,itprob
+      integer ngrida,ngridb,ngridc
+      integer, dimension(3) :: gridfactor
+      real(8) tanimoto_mean
+
+c     Local variables
+      integer :: i,j,idx,xidx,yidx,zidx
+      integer :: unitcell_a,unitcell_b,unitcell_c,block_index
+      real(8), allocatable :: localdata(:,:,:,:)
+      real(8), allocatable :: tanimoto_array(:)
+      real(8) :: intersection,union,tanimoto_std
+      integer :: a_idx,b_idx,c_idx
+      integer :: local_a,local_b,local_c
+      integer :: nblocks, npairs
+
+c     Calculate unit cell dimensions
+      unitcell_a = ngrida / gridfactor(1)
+      unitcell_b = ngridb / gridfactor(2)
+      unitcell_c = ngridc / gridfactor(3)
+
+c     Determine number of blocks based on folding factors
+      nblocks = gridfactor(1) * gridfactor(2) * gridfactor(3)
+      
+      allocate(localdata(nblocks, unitcell_a, unitcell_b, unitcell_c))
+      localdata = 0.0
+
+c     Note: the grid is a 2D flattened array. The 3D volumetric data is 
+c     stored as a 1D array. The indices refer to grid points in the 3D
+c     space, which are mapped to/from the 1D representation as needed.
+
+c     Map 1D probability array to 3D blocks
+      do j = 1,gridsize
+          a_idx = (j-1) / (ngridb * ngridc) + 1
+          b_idx = mod((j-1) / ngridc, ngridb) + 1
+          c_idx = mod(j-1, ngridc) + 1
+
+c         Determine block indices (xidx, yidx, zidx) for folding
+          xidx = (a_idx-1) / unitcell_a + 1
+          yidx = (b_idx-1) / unitcell_b + 1
+          zidx = (c_idx-1) / unitcell_c + 1
+
+c         Determine local indices within the block
+          local_a = mod(a_idx-1, unitcell_a) + 1
+          local_b = mod(b_idx-1, unitcell_b) + 1
+          local_c = mod(c_idx-1, unitcell_c) + 1
+
+c         Compute block index
+          block_index = (xidx-1)*(gridfactor(2)*gridfactor(3))+
+     &                  (yidx-1)*gridfactor(3)+zidx
+
+c         Store grid data in the correct block
+          localdata(block_index,local_a,local_b,local_c)=
+     &localdata(block_index,local_a,local_b,local_c)+
+     &grid(itprob,j)
+      enddo
+
+c     Normalize each block
+      do block_index = 1, nblocks
+          localdata(block_index, :, :, :) = 
+     &        localdata(block_index, :, :, :) / 
+     &       (unitcell_a * unitcell_b * unitcell_c)
+      enddo
+
+c     Allocate array for storing Tanimoto coefficients
+      npairs = nblocks * (nblocks - 1) / 2
+      allocate(tanimoto_array(npairs))
+
+c     Compute Tanimoto coefficients between all block pairs
+      idx = 1
+      do i = 1, nblocks - 1
+          do j = i + 1, nblocks
+              intersection = sum(localdata(i, :, :, :) * 
+     &                         localdata(j, :, :, :))
+              union = sum(localdata(i, :, :, :)**2) +
+     &                sum(localdata(j, :, :, :)**2)-intersection
+
+              if (union > 0.0) then
+                  tanimoto_array(idx) = intersection / union
+              else
+                  tanimoto_array(idx) = 0.0
+              endif
+              idx = idx + 1
+          enddo
+      enddo
+
+      tanimoto_mean = sum(tanimoto_array) / npairs
+      tanimoto_std = sqrt(sum((tanimoto_array - tanimoto_mean)**2)
+     &/npairs)
+
+c     Debuging - Print all tanimoto value
+c     print *, 'Testing calculate_tanimoto...'
+c     print *, 'Tanimoto Mean:', tanimoto_mean
+c     print *, 'Tanimoto Std:', tanimoto_std
+
+      deallocate(localdata)
+      deallocate(tanimoto_array)
+
+      end subroutine calculate_tanimoto
+
 
       subroutine frac(x,y,z,natms,rcell)
 c*********************************************************************

@@ -21,6 +21,24 @@ c************************************************************
 
       implicit none
 
+      integer added_steps
+      real(8) tanimoto_mean,tanimoto_std
+      real(8) mintani,scalar,tgttani
+      logical tilconv
+      integer initmcsteps,addcount
+
+      integer plateau_window
+      integer stable_iterations
+      real fluctuation_threshold
+      
+      real(8), allocatable :: tanimoto_history(:)
+      real (8) avg_change,recent_avg
+      integer history_index
+      logical buffer_full
+
+      real(8) recent_std,fluctuation,moving_avg
+      integer count_index,stop_step,plateau_count
+     
       character*1 cfgname(80)      
       character*8 outdir,localdir
       character*2 mnth
@@ -152,7 +170,7 @@ c ignored
       eqsteps=0
 c when running mc cycles keep track of if history to help averaging
       tick_tock_cycles = .false.
-      
+    
 c     initialize communications
       call initcomms()
       call gsync()
@@ -269,7 +287,35 @@ c       this is in case we run into allocation problems later on
      &celprp,ntpguest,lrestart,laccsample,lnumg,nnumg,nhis,nwind,
      &mcinsf, mcdelf, mcdisf, mcjmpf, mcflxf, mcswpf, mctraf, mcrotf,
      &mcmjpf,disp_ratio,tran_ratio,rota_ratio,lfuga,maxguest,maxatm,
-     &desorb)
+     &desorb,tgttani,tilconv)
+
+c Tanimoto variables
+c Copy initial mcsteps before adding moves to simulations.
+      initmcsteps=mcsteps
+
+c Initiate added prod moves counter
+      addcount=0
+
+c If gridspacing is 1 1 1 reject any Tanimoto calculation 
+      if(tilconv.and.all(gridfactor==1))then
+          tilconv = .false.
+          if(idnode.eq.0)
+     &write(nrite, "(/,'*** error: Gridfactor (', 3i4, ') is 
+     &unfoldable. Unable to calculate Tanimoto similarity. 
+     &Terminating execution to prevent wasted computation.')") 
+     &gridfactor
+          stop
+      endif
+
+c default on-the-fly tanimoto values
+      if(tilconv)then
+        buffer_full = .false.
+        plateau_window = 1500
+        stable_iterations = 750
+        history_index = 0
+        fluctuation_threshold = 0.0001
+        allocate(tanimoto_history(plateau_window))
+      endif
 
 c Normalise the move frequencies (individually)
       if (desorb.eq.1)then
@@ -471,7 +517,9 @@ c        write(999,'(3x,a4,3f16.6)')atomname(i),xxx(i),yyy(i),zzz(i)
 c      enddo
 
 c      write(999,"('some other info ',/)")
-c      write(999,"('production?',3x,l)")production
+c      write(999,"('production?',3x,l)")
+
+
 c      write(999,"('number of guests',3x,i3)")ntpguest
 c      write(999,"('number of equilibrium steps',3x,i9)")eqsteps
 c      write(999,"('number of production steps ',3x,i9)")mcsteps
@@ -1779,11 +1827,9 @@ c           restore original ewald1 sums if step is rejected
             energy(iguest)=origenergy
           endif
 
-
           jump = .false.
           multijump=.false.
           deallocate(prevmultijump)
-
 
 c*************************************************************************
         elseif(swap)then
@@ -1812,10 +1858,12 @@ c       if so, store averages, probability plots etc..
 c=========================================================================
 
         if(production)then 
+
           if((laccsample).and.(accepted).or.(.not.laccsample))then
             prodcount=prodcount+1
             rollcount=rollcount+1
             chainstats(1) = dble(prodcount)
+
             do i=1,ntpguest
               mol=locguest(i) 
               dmolecules=real(nummols(mol))
@@ -1928,6 +1976,87 @@ c           compute C_v and Q_st for the windowed averages
         endif
           if(lprob)then
             call storeprob(ntpguest,rcell,ngrida,ngridb,ngridc)
+
+            if(tilconv)then
+              if(((prodcount+weight).eq.mcsteps)
+     &.or.(prodcount.eq.mcsteps))then
+    
+                  call get_min_tanimoto(ntpguest,gridsize,
+     &ngrida,ngridb,ngridc,gridfactor,mintani)
+
+c                 Automatic stop function if the tanimoto plateaus
+c                 Could make this a subroutine later on (if fully tranferable)
+c                 Update Tanimoto circular buffer
+                  history_index = history_index + 1
+                  if (history_index > plateau_window) then
+                      history_index = 1
+                      buffer_full = .true.
+                  end if
+                  tanimoto_history(history_index) = mintani
+
+c                 Only check plateau condition once buffer is full
+                  if (buffer_full) then
+c                     Compute moving average of last 100 Tanimoto values
+                      moving_avg=sum(tanimoto_history)/plateau_window
+
+c                     Compute standard deviation
+                      recent_avg = moving_avg
+                      recent_std = 0.0
+                      do i = 1, plateau_window
+                          recent_std = recent_std + 
+     &                     (tanimoto_history(i) - recent_avg) ** 2
+                      end do
+                      recent_std = sqrt(recent_std / plateau_window)
+
+c                     Compute fluctuation tolerance
+                      if (recent_avg > 0.0) then
+                          fluctuation = recent_std / recent_avg
+                      else
+                          fluctuation = 1.0
+                      endif
+
+c                     Check plateau condition (low fluctuations)
+                      if (fluctuation < fluctuation_threshold) then
+                          plateau_count = plateau_count + 1
+                      else
+                          plateau_count = 0
+                      endif
+
+                      if (plateau_count >= stable_iterations) then
+c                          print*, 
+c     &"Tanimoto has plateaued at step:", prodcount, 
+c     &"with value:", moving_avg
+                          if(idnode.eq.0)then
+                            write(nrite,
+     &"(/,a,i17,/,t20,a,t6,f10.6,/,t31,a)")
+     &"Tanimoto has plateaued at step:", prodcount, 
+     &"With value: ", moving_avg, 
+     &"Terminating production and moving to analysis"
+                          endif
+                          exit
+                      endif
+                  endif
+
+c                 Check is the tanimoto reached the target value                  
+                  if(mintani.lt.tgttani)then
+
+c Different scalling function tried (saved for later)               
+c scalar=10*(((tgttani+0.001)/max(mintani+0.001,0.001)-1.0)/
+c  &((tgttani+0.001)/max(mintani+0.001,0.001) + 2.5) + 1.0)
+c scalar = 1000*tgttani/max(mintani,0.0001)
+c scalar = 1000*exp(max(mintani,0.0001)/max(mintani,0.0001))
+
+c added_steps=int(scalar*log(real(initmcsteps)+2.0))
+c added_steps=int(scalar*initmcsteps)
+
+                      scalar = 750*sqrt(tgttani/max(mintani,0.001))
+                      added_steps=int(log(real(initmcsteps)+1.0)
+     &*scalar)
+                      mcsteps = mcsteps + added_steps
+                      addcount=addcount+added_steps
+                  endif
+              endif
+            endif
           endif
         endif
 
@@ -1958,6 +2087,7 @@ c          enddo
         flx(iguest)=0
         swp(iguest)=0
       enddo
+
 c*************************************************************************
 c     END OF GCMC RUN
 c*************************************************************************
@@ -2207,7 +2337,18 @@ c     sum over all parallel nodes
       call gisum(gcmccount,1,buffer)
 
 c     write final probability cube files
-      
+
+c     Write header for Tanimoto section to OUTPUT file
+      if(idnode.eq.0.and.lprob.and.prodcount.gt.0
+     &.and..not.all(gridfactor==1))then
+        write(nrite, '(A)') 'Tanimoto Statistical Convergence Crit
+     &eria for Probability Plots'
+        write(nrite, '(/,A)') '       File Name                        
+     &Mean       Std Dev'
+        write(nrite, '(A)') '       -------------------------------
+     &-----------------------'
+      endif
+
       cprob=0
       cell=cell*angs2bohr
       if(lprob.and.prodcount.gt.0)then
@@ -2217,14 +2358,26 @@ c     write final probability cube files
             cprob=cprob+1
             iprob=iprob+1
             call gdsum3(grid,cprob,ntprob,gridsize,gridbuff)
-            if(idnode.eq.0)call writeprob
+            if(idnode.eq.0)then
+              call writeprob
      &(i,cprob,iprob,cell,ntpguest,ntpfram,gridsize,
      &ngrida,ngridb,ngridc,prodcount)
+              if(.not.all(gridfactor==1))then
+                call writetanimoto
+     &(i,cprob,iprob,gridsize,idnode,
+     &ngrida,ngridb,ngridc,gridfactor)
+              endif
+            endif          
           enddo
         enddo
       endif
-
+      
       if(idnode.eq.0)then
+        if(tilconv)then
+          write(nrite,"(/, a, i17, /, t9, a)")
+     &"Increasing MC steps dynamically: Added ",addcount, 
+     &"extra steps to reach target tanimoto."
+        endif
         write(nrite,"(/,a17,i9,a15,f13.3,a8)")
      &'time elapsed for ',gcmccount,' gcmc steps : ',timelp,' seconds'
         write(nrite,"(/,a30,i9)")
