@@ -468,7 +468,6 @@ The REVIVE file is a binary file containing accumulated statistical data from th
 
 The **his.xyz** file is generated only if the `history` keyword is specified in the CONTROL file. This file records the guest configuration at each specified interval in XYZ format, capturing the system’s changes over time. It can be visualized using any XYZ-compatible application. Guest specific hsitory files will be generated if simulation contain more than one guest molecule.
 
-
 ### Convergence File
 
 The **numguests.out** file is helpful for determining whether the simulation has converged. Multiple `numguests.out` files may be generated, each corresponding to a different guest molecule in the system. The columns in this file are as follows:
@@ -499,6 +498,24 @@ To restart a simulation, you need a completed FASTMC directory. Below is an exam
 `-- prob_guest01_prob_02.cube
 ~~~
 
+### Updating the CONTROL File
+
+Add the restart keyword in the CONTROL file:
+
+~~~
+GCMC Run
+restart
+temperature 303.150000
+steps 100000000
+equilibration -1500000
+max guest atoms 3000
+max framework atoms 15000
+...
+~~~
+
+Submit the restart job.
+
+## Depricated (but can still be used to start binary simulation from a unary simulation)
 The key files required to restart a simulation are the REVCON and REVIVE files found in the branch01 directory.
 
 To restart a simulation, move the **REVCON** and **REVIVE** files from the `branch01` directory to the main FASTMC directory where the OUTPUT file was created:
