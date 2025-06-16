@@ -2,7 +2,7 @@
       use parse_module
       implicit none
 
-      integer nsite
+      integer nsite,cprobutil
       integer mxlist,mxgrid,mxegrd
       real(8) volum, total_pressure, despre, packf
       real(8), allocatable :: xxx(:),framwkxxx(:,:),origframwkxxx(:,:)
@@ -707,10 +707,11 @@ c     Output variable
 c     Initialize min_tanimoto to a large value
       mintani = 1.0d0 
 
+      cprobutil = 0
       do iguest = 1, ntpguest
         do itprob = 1, nprob(iguest)
-
-          call calculate_tanimoto(itprob,gridsize,
+          cprobutil=cprobutil+1
+          call calculate_tanimoto(cprobutil,gridsize,
      &ngrida,ngridb,ngridc,gridfactor,tanimoto_mean,tanimoto_std)
 
 c         Debuging - Print calculated values  
